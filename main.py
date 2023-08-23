@@ -1,6 +1,6 @@
-import eel, time, threading
+import time, threading
 from datetime import datetime
-from src.database import MongoDB
+# from src.database import MongoDB
 from src.bot import BetBot
 
 class Updater:
@@ -19,7 +19,6 @@ class Updater:
     def expire_warning():
         eel.expireWarning()
 
-@eel.expose
 def handle_login(account:dict):
     conta = MongoDB.login(
         account["username"], account["password"])
@@ -35,12 +34,21 @@ def handle_login(account:dict):
         return conta
     return False
 
-@eel.expose
-def operate(account:dict):
-    atualizador = Updater(account)
-    bot = BetBot(account, atualizador)
-    threading.Thread(target=bot.start,
-        daemon = True).start()
+def operate(account: dict):
+    # atualizador = Updater(account)
+    # bot = BetBot(account, atualizador)
+    bot = BetBot(account)
+    # threading.Thread(target=bot.start,
+    #     daemon = True).start()
 
-eel.init('src/web')
-eel.start('index.html')
+
+if __name__ == '__main__':
+    
+    account = {
+        'username': 'wubbaru',
+        'password': 'Simomofin13_BET!'
+    }
+    operate(account)
+
+# eel.init('src/web')
+# eel.start('index.html')

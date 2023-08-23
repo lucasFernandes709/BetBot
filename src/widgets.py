@@ -1,75 +1,101 @@
-from selenium.webdriver import FirefoxProfile, Firefox, DesiredCapabilities
+# from selenium.webdriver import ChromeProfile, Chrome, DesiredCapabilities
+from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
-import undetected_chromedriver.v2 as Browser_uc
+# import undetected_chromedriver as Browser_uc
 from selenium.webdriver.common.by import By
 from typing import Tuple, List
 import time, re
+import subprocess
+from selenium_profiles.webdriver import Chrome
+from selenium_profiles.profiles import profiles
+from selenium_driverless.webdriver import ChromeOptions
 
-# Classes
-class FirefoxBrowser(Firefox):
-    def __init__(self):
-        profile = FirefoxProfile()
-        profile.set_preference("dom.webdriver.enabled", False)
-        profile.set_preference('useAutomationExtension', False)
-        profile.update_preferences()
-        desired = DesiredCapabilities.FIREFOX
+# # Classes
+# class FirefoxBrowser(Firefox):
+#     def __init__(self):
+#         # PROXY_HOST = 'http://gate.smartproxy.com:7000'
+#         Firefox_capabilities = DesiredCapabilities.Firefox
+        
+#         # prox = Proxy()
+#         # prox.proxy_type = ProxyType.MANUAL
+#         # prox.autodetect = False
+#         # prox.http_proxy = PROXY_HOST
+#         # prox.ssl_proxy = PROXY_HOST
+#         # prox.to_capabilities(Firefox_capabilities)
 
-        super().__init__(firefox_profile=profile, desired_capabilities=desired)
+#         profile = FirefoxProfile()
+#         profile.set_preference("dom.webdriver.enabled", False)
+#         profile.set_preference('useAutomationExtension', False)
+#         profile.set_preference('marionette', False)
+#         profile.update_preferences()
+#         opts = Options()
+#         opts.profile = profile
 
-ChromeBrowser = Browser_uc.Chrome
+#         super().__init__(options=opts)
+
+# ChromeBrowser = Browser_uc.Chrome
+
+# subprocess.Popen('"/usr/bin/google-chrome-stable" --remote-debugging-port=9222 --incognito', shell=True)
+# options = ChromeOptions()
+# options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+# ChromeBrowser = Chrome(options=options)
+
+profile = profiles.Windows() # or .Android
+options = ChromeOptions()
+ChromeBrowser = Chrome(profile=profile, options=options, driverless_options=True)
 
 # Abstrações
-def rolar_pagina(browser: Firefox, valor: int):
-    browser.execute_script(f"window.scroll(0, window.pageYOffset + {valor})")
+def rolar_pagina(browser: Chrome, valor: int):
+    browser.execute_script(f'window.scroll(0, window.pageYOffset + {valor})')
 
 def login(wait: WebDriverWait, email: str, password: str):
-    apertar_botao(wait, ".hm-MainHeaderRHSLoggedOutWide_Login ")
-    preencher_campo(wait, ".lms-StandardLogin_Username ", email)
-    preencher_campo(wait, ".lms-StandardLogin_Password ", password)
-    apertar_botao(wait, ".lms-StandardLogin_LoginButton ")
+    apertar_botao(wait, '.hm-MainHeaderRHSLoggedOutWide_Login ')
+    preencher_campo(wait, '.lms-StandardLogin_Username ', email)
+    preencher_campo(wait, '.lms-StandardLogin_Password ', password)
+    apertar_botao(wait, 'lms-LoginButton_Text ')
 
-def tirar_notificacoes(browser: Firefox, fast: WebDriverWait, wait: WebDriverWait):
+def tirar_notificacoes(browser: Chrome, fast: WebDriverWait, wait: WebDriverWait):
     try:
-        browser.switch_to.frame(encontra_elementos(wait, ".lp-UserNotificationsPopup_Frame ")[0])
-        apertar_botao(wait, "#remindLater")
+        browser.switch_to.frame(encontra_elementos(wait, '.lp-UserNotificationsPopup_Frame ')[0])
+        apertar_botao(wait, '#remindLater')
         try: 
             for _ in range(2):
-                apertar_botao(fast, ".pm-PushTargetedMessageOverlay_CloseButton ")
+                apertar_botao(fast, '.pm-PushTargetedMessageOverlay_CloseButton ')
                 break
         except: pass
     except: pass
 
 def devolve_jogos(wait: WebDriverWait) -> list:
     return encontra_filhos(encontra_elementos(
-        wait, ".him-Classification ")[0], ".him-DetailsTwoWay ")
+        wait, '.him-Classification ')[0], '.him-DetailsTwoWay ')
 
 def filtra_tempo(jogo: WebElement, maximo: int) -> bool:
     try:
         hora_min = encontra_filhos(
-            jogo, ".him-InPlayTimer "
+            jogo, '.him-InPlayTimer '
         )[0].text
     except: return False
 
-    tempo = int(hora_min.split(":")[0])
+    tempo = int(hora_min.split(':')[0])
     if tempo > maximo:
-        print("Passou do tempo requisitado:", maximo)
+        print('Passou do tempo requisitado:', maximo)
         return False
     return True
 
 def tirar_aposta(wait: WebDriverWait):
-    try: apertar_botao(wait, ".bss-BetslipStandardModule_Minimised .bss-DefaultContent ")
+    try: apertar_botao(wait, '.bss-BetslipStandardModule_Minimised .bss-DefaultContent ')
     except: pass
     try:
-        apostas = encontra_elementos(wait, ".bss-NormalBetItem_DeleteContainer ")
+        apostas = encontra_elementos(wait, '.bss-NormalBetItem_DeleteContainer ')
     except: return
     for aposta in reversed(apostas):
-        if encontra_filhos(aposta, ".bss-StakeBox_StakeValue-empty ") != []:
-            try: encontra_filhos(aposta, ".bss-NormalBetItem_Remove")[0].click()
+        if encontra_filhos(aposta, '.bss-StakeBox_StakeValue-empty ') != []:
+            try: encontra_filhos(aposta, '.bss-NormalBetItem_Remove')[0].click()
             except: pass
-    try: apertar_botao(wait, ".bss-DefaultContent_Close ")   
-    except: apertar_botao(wait, ".bsm-BetslipStandardModule_Overlay ")
+    try: apertar_botao(wait, '.bss-DefaultContent_Close ')   
+    except: apertar_botao(wait, '.bsm-BetslipStandardModule_Overlay ')
 
 def abrir_opcoes(wait: WebDriverWait):
     time.sleep(6)
@@ -88,8 +114,8 @@ def abrir_opcoes(wait: WebDriverWait):
 
 def selecionar_info_tabela(opcao: WebElement, info: str, medida: str, 
     minOdd: float, search:str) -> WebElement or bool:
-    rowName = (".srb-ParticipantLabelCentered " if search == "table1" 
-        else ".srb-ParticipantLabel_Name ")
+    rowName = ('.srb-ParticipantLabelCentered ' if search == 'table1' 
+        else '.srb-ParticipantLabel_Name ')
     row = -1
     for index, linha in enumerate(
         encontra_filhos(opcao, rowName)):
@@ -100,7 +126,7 @@ def selecionar_info_tabela(opcao: WebElement, info: str, medida: str,
     if row == -1: return False
 
     column = 0
-    info = re.escape(info).replace("X", "\d").lower()
+    info = re.escape(info).replace('X', '\d').lower()
     for index, coluna in enumerate(
         encontra_filhos(opcao, '.gl-MarketColumnHeader ')):
         coluna = coluna.text.lower()
@@ -108,17 +134,17 @@ def selecionar_info_tabela(opcao: WebElement, info: str, medida: str,
             column = index
             break
 
-    columnName = (".gl-ParticipantOddsOnly" if search == "table1" 
-        else ".gl-Participant_General ")
+    columnName = ('.gl-ParticipantOddsOnly' if search == 'table1' 
+        else '.gl-Participant_General ')
     botao =  encontra_filhos(encontra_filhos(
-        opcao, ".gl-Market ")[column], columnName)[row]
+        opcao, '.gl-Market ')[column], columnName)[row]
 
     texto_btn = botao.text.split()
     if len(texto_btn) == 2: texto_btn = float(texto_btn[1])
     else: texto_btn = float(texto_btn[0])
     if texto_btn > minOdd: return botao
 
-    print(f"Odd inferior ao requerido: {texto_btn} < {minOdd}")
+    print(f'Odd inferior ao requerido: {texto_btn} < {minOdd}')
     return False
 
 def selecionar_info_tabela2(opcao: WebElement, info: str, medida: str, 
@@ -131,36 +157,36 @@ def selecionar_info_tabela2(opcao: WebElement, info: str, medida: str,
             break
     
     for index, linha in enumerate(
-        encontra_filhos(encontra_filhos(opcao, ".gl-Market "
-            )[column], ".gl-ParticipantCentered")):
+        encontra_filhos(encontra_filhos(opcao, '.gl-Market '
+            )[column], '.gl-ParticipantCentered')):
         texto, odd = linha.text.lower().strip().split()
         if medida.lower() == texto:
             botao = linha
             if float(odd) > minOdd:
                 return botao
             else:
-                print(f"Odd inferior ao requerido: {float(botao.text)} < {minOdd}")
+                print(f'Odd inferior ao requerido: {float(botao.text)} < {minOdd}')
             break
 
     return False
 
 def seleciona_info_botoes(
     opcao: WebElement, info: str, minOdd: float) -> WebElement or bool:
-    info = re.escape(info).replace("X", "\d").lower()
-    for coluna in encontra_filhos(opcao, ".gl-Participant_General "):
-        informacao, odd = coluna.text.split("\n")
+    info = re.escape(info).replace('X', '\d').lower()
+    for coluna in encontra_filhos(opcao, '.gl-Participant_General '):
+        informacao, odd = coluna.text.split('\n')
         if re.match(info, informacao.lower()):
             if float(odd) > minOdd: return coluna
             else:
-                print(f"Odd inferior ao requerido: {odd} < {minOdd}")
+                print(f'Odd inferior ao requerido: {odd} < {minOdd}')
                 break
     return False
 
 def procura_aposta(opcao: WebElement, info: str or list, 
     minOdd: float, search: str) -> bool:
-    if search != "options":
+    if search != 'options':
         coluna, medida = info
-        if search != "table2":
+        if search != 'table2':
             botao = selecionar_info_tabela(
                 opcao, coluna, medida, minOdd, search)
         else: 
@@ -175,14 +201,14 @@ def procura_aposta(opcao: WebElement, info: str or list,
     return False
 
 def procura_opcao(wait: WebDriverWait, nome: str) -> WebElement or bool:
-    nome = re.escape(nome).replace("X", "\d").lower() + "$"
+    nome = re.escape(nome).replace('X', '\d').lower() + '$'
     opcoes = encontra_elementos(wait, '.sip-MarketGroup ')
     for opcao in opcoes:
         try:
             titulo = encontra_filhos(opcao, '.sip-MarketGroupButton ')[0]
-            titulo = titulo.text.strip().lower().replace("º", "°")
+            titulo = titulo.text.strip().lower().replace('º', '°')
             if re.match(nome, titulo):
-                print("\nprocura_opcao:", titulo)
+                print('\nprocura_opcao:', titulo)
                 return opcao
         except Exception as e: print(e)
     return False
@@ -195,7 +221,7 @@ def adicionar_valor(
 
     try:
         time.sleep(2)
-        apertar_botao(fast, ".bss-DefaultContent ")
+        apertar_botao(fast, '.bss-DefaultContent ')
     except Exception as e: print(e)
     
     try:
@@ -204,30 +230,30 @@ def adicionar_valor(
     except Exception as e: print(e)
 
     try:
-        apertar_botao(fast, ".bss-DefaultContent_Close ")
+        apertar_botao(fast, '.bss-DefaultContent_Close ')
     except Exception as e: print(e)
 
     return atribuiu
 
 def atribuir_valor_multi(wait: WebDriverWait, title:str, valor: float) -> bool:
     jogadas = encontra_elementos(wait, 
-        ".bss-NormalBetItem_ContentWrapper ")
-    title = re.escape(title).replace("X", "\d").lower().replace("°", "º")
+        '.bss-NormalBetItem_ContentWrapper ')
+    title = re.escape(title).replace('X', '\d').lower().replace('°', 'º')
     for jogada in reversed(jogadas):
         print(title, jogada.text.lower().strip())
         if re.search(title, jogada.text.lower().strip()):
             encontra_filhos(jogada, 
-                ".bss-StakeBox_StakeValueInput"
+                '.bss-StakeBox_StakeValueInput'
             )[0].send_keys(str(valor))
             return True
     return False
 
 def atribuir_valor_single(wait: WebDriverWait, title:str, valor: float) -> bool:    
     try:
-        title = re.escape(title).replace("X", "\d").lower().replace("°", "º")
-        text_jogada = encontra_elementos(wait, ".qbs-NormalBetItem_Details")[0].text
+        title = re.escape(title).replace('X', '\d').lower().replace('°', 'º')
+        text_jogada = encontra_elementos(wait, '.qbs-NormalBetItem_Details')[0].text
         if re.search(title, text_jogada.lower().strip()):
-            preencher_campo(wait,".qbs-StakeBox_StakeInput ", str(valor))
+            preencher_campo(wait,'.qbs-StakeBox_StakeInput ', str(valor))
             return True
     except Exception as e:
         print(type(e), e)
@@ -235,41 +261,41 @@ def atribuir_valor_single(wait: WebDriverWait, title:str, valor: float) -> bool:
 
 # Informações
 def abrir_escanteios(wait: WebDriverWait) -> bool:
-    for opcao in encontra_elementos(wait, ".ipe-GridHeaderTabLink "):  
-        if "Escanteios" in opcao.text: 
+    for opcao in encontra_elementos(wait, '.ipe-GridHeaderTabLink '):  
+        if 'Escanteios' in opcao.text: 
             opcao.click()
             return True
     return False
 
 def banca(wait: WebElement) -> float:
     texto_banca = encontra_elementos(
-        wait, ".hm-Balance ")[0].text
-    print("Banca:", texto_banca)
-    return float(texto_banca.strip("R$").replace(",", "."))
+        wait, '.hm-Balance ')[0].text
+    print('Banca:', texto_banca)
+    return float(texto_banca.strip('R$').replace(',', '.'))
 
 def nome_times(wait: WebDriverWait) -> Tuple[str]:
     return encontra_elementos(
-        wait, ".ipe-EventHeader_Fixture"
-    )[0].text.split(" v ")
-
+        wait, '.ipe-EventHeader_Fixture'
+    )[0].text.split(' v ')
+    
 def numero_gols(jogo: WebElement) -> List[int]:
     lista_gols = encontra_filhos(jogo,
-        ".him-StandardScores_Scores "
-    )[0].text.split("\n")
+        '.him-StandardScores_Scores '
+    )[0].text.split('\n')
     return list(map(int, lista_gols))
 
 def numero_escanteios(wait: WebDriverWait) -> int:
     texto_escanteios = encontra_elementos(wait, 
-        ".sip-MarketGroup_Info ")[0].text
+        '.sip-MarketGroup_Info ')[0].text
     print(texto_escanteios)
     return int(texto_escanteios.split()[-1])
 
 
 # Base
 def apertar_botao(wait: WebDriverWait, selector: str):
-    wait.until(EC.element_to_be_clickable(
-        (By.CSS_SELECTOR, selector)
-    )).click()
+        wait.until(EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, selector)
+        )).click()
 
 def esperar_sumir(wait: WebDriverWait, selector: str):
     wait.until(EC.invisibility_of_element(
